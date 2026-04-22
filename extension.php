@@ -99,8 +99,14 @@ final class ImageCacheExtension extends Minz_Extension
         if (!self::is_remote_url($url)) {
             return $url;
         }
+
+        $cacheUrl = FreshRSS_Context::userConf()->image_cache_url;
+        if (!empty($cacheUrl) && strpos($url, $cacheUrl) === 0) {
+            return $url;
+        }
+
         $url = rawurlencode($url);
-        return FreshRSS_Context::userConf()->image_cache_url . $url;
+        return $cacheUrl . $url;
     }
 
     public static function small($string)
@@ -194,12 +200,9 @@ final class ImageCacheExtension extends Minz_Extension
 
     public static function content_modification_hook($entry)
     {
+        // Only rewrite images in the entry body to preserve thumbnail/enclosure deduplication.
         $entry->_content(
             self::swapUris($entry->content())
-        );
-	    $entry->_attribute(
-            'thumbnail',
-            self::swapThumbnail($entry->thumbnail() ?? [])
         );
 
         return $entry;
